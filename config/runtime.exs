@@ -26,6 +26,13 @@ config :rewoven_quiz, RewovenQuizWeb.Endpoint,
     ip: {0, 0, 0, 0}
   ]
 
+# Supabase keys for the client-side premium gate on the host page.
+# These are PUBLIC (the anon key is safe to ship to browsers).
+config :rewoven_quiz,
+  supabase_url: System.get_env("SUPABASE_URL"),
+  supabase_anon_key: System.get_env("SUPABASE_ANON_KEY"),
+  premium_url: System.get_env("PREMIUM_URL", "https://premium.rewovenapp.com")
+
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you

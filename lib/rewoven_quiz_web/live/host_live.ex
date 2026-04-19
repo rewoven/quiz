@@ -104,10 +104,27 @@ defmodule RewovenQuizWeb.HostLive do
     <div class="quiz-host">
       <%= case @phase do %>
         <% :setup -> %>
-          <div class="setup-screen">
-            <h1>Create a Quiz</h1>
-            <p class="subtitle">Set up a multiplayer sustainability quiz for your group</p>
-            <form phx-submit="create_game" class="setup-form">
+          <div class="setup-screen" id="setup-screen">
+            <!-- Premium gate (toggled by JS once Supabase reports premium status) -->
+            <div id="premium-gate" style="display:block;">
+              <h1>🔒 Premium feature</h1>
+              <p class="subtitle">
+                Hosting a multiplayer quiz is part of <strong>Rewoven Premium</strong>.
+                Subscribe for $4.99/month to unlock it (plus the curriculum and unlimited fabric scans).
+              </p>
+              <a href="https://premium.rewovenapp.com" class="btn-create" style="display:inline-block; text-decoration:none; text-align:center;">
+                Get Premium
+              </a>
+              <p style="margin-top:16px; font-size:14px; color:#6b7280;">
+                Already a subscriber? <a href="#" id="check-premium-link" style="color:#059669; font-weight:600;">Refresh status</a>
+              </p>
+            </div>
+
+            <!-- Real host UI (hidden until JS confirms premium) -->
+            <div id="host-form" style="display:none;">
+              <h1>Create a Quiz</h1>
+              <p class="subtitle">Set up a multiplayer sustainability quiz for your group</p>
+              <form phx-submit="create_game" class="setup-form">
               <label>Category</label>
               <select name="category">
                 <option value="all">All Categories (Mix)</option>
@@ -125,7 +142,8 @@ defmodule RewovenQuizWeb.HostLive do
               </select>
 
               <button type="submit" class="btn-create">Create Game</button>
-            </form>
+              </form>
+            </div>
           </div>
 
         <% :lobby -> %>
@@ -218,6 +236,50 @@ defmodule RewovenQuizWeb.HostLive do
           </div>
       <% end %>
     </div>
+
+    <script :if={@phase == :setup}>
+      (() => {
+        const SUPABASE_URL = document.body.dataset.supabaseUrl;
+        const SUPABASE_KEY = document.body.dataset.supabaseAnonKey;
+        const PREMIUM_URL  = document.body.dataset.premiumUrl || 'https://premium.rewovenapp.com';
+
+        const gate = document.getElementById('premium-gate');
+        const form = document.getElementById('host-form');
+        const refreshLink = document.getElementById('check-premium-link');
+
+        const reveal = () => {
+          if (gate) gate.style.display = 'none';
+          if (form) form.style.display = 'block';
+        };
+        const lock = () => {
+          if (gate) gate.style.display = 'block';
+          if (form) form.style.display = 'none';
+        };
+
+        if (!SUPABASE_URL || !SUPABASE_KEY || !window.supabase) {
+          // Misconfigured — fall back to lock so we don't accidentally
+          // give away premium features.
+          lock();
+          return;
+        }
+
+        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const check = async () => {
+          const { data: { user } } = await sb.auth.getUser();
+          if (!user) { lock(); return; }
+          const { data: profile } = await sb
+            .from('profiles')
+            .select('is_premium')
+            .eq('id', user.id)
+            .maybeSingle();
+          if (profile?.is_premium) reveal(); else lock();
+        };
+
+        check();
+        if (refreshLink) refreshLink.addEventListener('click', (e) => { e.preventDefault(); check(); });
+      })();
+    </script>
     """
   end
 end
