@@ -19,6 +19,7 @@
     data-supabase-url={Application.get_env(:rewoven_quiz, :supabase_url)}
     data-supabase-anon-key={Application.get_env(:rewoven_quiz, :supabase_anon_key)}
     data-premium-url={Application.get_env(:rewoven_quiz, :premium_url)}
+    data-require-premium={to_string(Application.get_env(:rewoven_quiz, :require_premium, false))}
   >
     {@inner_content}
   </body>

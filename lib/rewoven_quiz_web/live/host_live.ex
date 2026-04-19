@@ -242,6 +242,7 @@ defmodule RewovenQuizWeb.HostLive do
         const SUPABASE_URL = document.body.dataset.supabaseUrl;
         const SUPABASE_KEY = document.body.dataset.supabaseAnonKey;
         const PREMIUM_URL  = document.body.dataset.premiumUrl || 'https://premium.rewovenapp.com';
+        const REQUIRE_PREMIUM = document.body.dataset.requirePremium === 'true';
 
         const gate = document.getElementById('premium-gate');
         const form = document.getElementById('host-form');
@@ -255,6 +256,9 @@ defmodule RewovenQuizWeb.HostLive do
           if (gate) gate.style.display = 'block';
           if (form) form.style.display = 'none';
         };
+
+        // Soft-launch: when REQUIRE_PREMIUM is false, everyone can host.
+        if (!REQUIRE_PREMIUM) { reveal(); return; }
 
         if (!SUPABASE_URL || !SUPABASE_KEY || !window.supabase) {
           // Misconfigured — fall back to lock so we don't accidentally
