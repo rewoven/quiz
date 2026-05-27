@@ -32,9 +32,8 @@ config :rewoven_quiz,
   supabase_url: System.get_env("SUPABASE_URL"),
   supabase_anon_key: System.get_env("SUPABASE_ANON_KEY"),
   premium_url: System.get_env("PREMIUM_URL", "https://premium.rewovenapp.com"),
-  # Soft launch: when REQUIRE_PREMIUM=false (or unset), the host paywall
-  # is bypassed and anyone can create a quiz game.
-  require_premium: System.get_env("REQUIRE_PREMIUM") == "true"
+  # Premium gate disabled — all features free for now.
+  require_premium: false
 
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.
