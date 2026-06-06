@@ -22,7 +22,10 @@ defmodule RewovenQuizWeb.HostLive do
       reveal_data: nil,
       category: "all",
       question_count: "15",
-      categories: Questions.categories()
+      categories: Questions.categories(),
+      # Server-side premium gate decision. When require_premium is false
+      # (soft launch), the host form renders directly — no JS, no gate.
+      gate_premium: Application.get_env(:rewoven_quiz, :require_premium, false)
     )
 
     {:ok, socket}
@@ -105,7 +108,11 @@ defmodule RewovenQuizWeb.HostLive do
       <%= case @phase do %>
         <% :setup -> %>
           <div class="setup-screen" id="setup-screen">
-            <!-- Premium gate (toggled by JS once Supabase reports premium status) -->
+            <!-- Premium gate: only rendered when require_premium is on.
+                 Non-premium visitors then see this; JS reveals the form
+                 for confirmed premium users. When require_premium is off,
+                 this block isn't rendered at all and the form shows. -->
+            <%= if @gate_premium do %>
             <div id="premium-gate" style="display:block;">
               <h1>🔒 Premium feature</h1>
               <p class="subtitle">
@@ -119,9 +126,10 @@ defmodule RewovenQuizWeb.HostLive do
                 Already a subscriber? <a href="#" id="check-premium-link" style="color:#059669; font-weight:600;">Refresh status</a>
               </p>
             </div>
+            <% end %>
 
-            <!-- Real host UI (hidden until JS confirms premium) -->
-            <div id="host-form" style="display:none;">
+            <!-- Host UI: visible by default; hidden only when gating premium -->
+            <div id="host-form" style={if(@gate_premium, do: "display:none;", else: "display:block;")}>
               <h1>Create a Quiz</h1>
               <p class="subtitle">Set up a multiplayer sustainability quiz for your group</p>
               <form phx-submit="create_game" class="setup-form">
@@ -237,7 +245,7 @@ defmodule RewovenQuizWeb.HostLive do
       <% end %>
     </div>
 
-    <script :if={@phase == :setup}>
+    <script :if={@phase == :setup and @gate_premium}>
       (() => {
         const SUPABASE_URL = document.body.dataset.supabaseUrl;
         const SUPABASE_KEY = document.body.dataset.supabaseAnonKey;
