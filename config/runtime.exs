@@ -32,8 +32,16 @@ config :rewoven_quiz,
   supabase_url: System.get_env("SUPABASE_URL"),
   supabase_anon_key: System.get_env("SUPABASE_ANON_KEY"),
   premium_url: System.get_env("PREMIUM_URL", "https://premium.rewovenapp.com"),
-  # Premium gate disabled — all features free for now.
-  require_premium: false
+  # Premium gate driven by one shared flag file, toggleable with a single
+  # command (no redeploy):
+  #   echo on  > /opt/rewoven/premium.flag   # premium ON
+  #   echo off > /opt/rewoven/premium.flag   # premium OFF (everything free)
+  # then restart the service. Missing file or anything but "on" = free.
+  require_premium:
+    (case File.read("/opt/rewoven/premium.flag") do
+       {:ok, content} -> String.trim(content) == "on"
+       _ -> false
+     end)
 
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.
